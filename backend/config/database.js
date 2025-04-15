@@ -1,15 +1,15 @@
 const { Sequelize } = require('sequelize');
 const path = require('path');
 
-const sequelize = new Sequelize({ 
-    dialect: 'sqlite',
-    storage: path.join(__dirname, '../../database.sqlite'),
-    logging: false
+const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: path.join(__dirname, '../../database.sqlite'), // Ruta absoluta
+  logging: false // Desactiva logs en consola (opcional)
 });
 
-// test de conexion 
+// Test de conexión
 sequelize.authenticate()
-    .then(() => console.log('conexion a sqlite establecida'))
-    .catch(err => console.error('error de la conexion: ', err))
+  .then(() => console.log('✅ Conexión a SQLite establecida'))
+  .catch(err => console.error('❌ Error de conexión:', err));
 
 module.exports = sequelize;
