@@ -1,47 +1,32 @@
-const fs = require('fs');
+const { Sequelize } = require('sequelize');
 const path = require('path');
-const Sequelize = require('sequelize');
-const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/database.js')[env];
-const db = {};
 
-let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
-} else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
-}
-
-fs.readdirSync(__dirname)
-  .filter(file => {
-    return (file.indexOf('.') !== 0) && (file !== basename) && (file.slice(-3) === '.js');
-  })
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
-  });
-
-Object.keys(db).forEach(modelName => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
+// Configuración directa sin dependencia de archivo externo
+const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: path.resolve(__dirname, '../database.sqlite'), // Ruta relativa mejorada
+  logging: console.log, // Muestra logs SQL en consola
+  define: {
+    timestamps: true, // Habilita createdAt y updatedAt por defecto
+    underscored: true // Usa snake_case en lugar de camelCase
   }
 });
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
-
-// Relación muchos-a-muchos entre Course y User (estudiantes)
-db.CourseStudents = sequelize.define('CourseStudents', {
-  id: {
-    type: Sequelize.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
-  },
-  enrollmentDate: {
-    type: Sequelize.DATE,
-    defaultValue: Sequelize.NOW
+// Verificación de conexión inmediata
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('✅ Conexión a SQLite establecida correctamente');
+    
+    // Sincronización inicial (solo en desarrollo)
+    if (process.env.NODE_ENV === 'development') {
+      await sequelize.sync({ alter: true });
+      console.log('🔄 Modelos sincronizados');
+    }
+  } catch (error) {
+    console.error('❌ Error de conexión a la base de datos:', error.message);
+    process.exit(1); // Termina la aplicación si no puede conectarse
   }
-});
+})();
 
-module.exports = db;
+module.exports = sequelize;
